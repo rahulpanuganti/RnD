@@ -20,14 +20,18 @@ import android.widget.ImageView;
 public class FloorPlanView extends ImageView{
 	
 	private double x,y;
-	private Bitmap bitmap,mutableBitmap;
+	private Bitmap bitmap;
 	private Paint paint;
 	private ScaleGestureDetector detector;
 	private static float MIN_ZOOM = 1f;
 	private static float MAX_ZOOM = 5f;
 	private float scaleFactor = 1.f;
-	private Canvas tempCanvas;
 	private Rect dst;
+	private static int NONE = 0;
+	private static int DRAG = 1;
+	private static int ZOOM = 2;
+	private int mode = 0;
+	private float startX = 0f,startY = 0f, translateX = 0f, translateY = 0f;
 	
 	public FloorPlanView(Context context) {
 		super(context);
@@ -59,6 +63,7 @@ public class FloorPlanView extends ImageView{
 		super.onDraw(canvas);
 		canvas.save();
 		canvas.scale(scaleFactor, scaleFactor);
+		canvas.translate(translateX/scaleFactor, translateY/scaleFactor);
 		canvas.drawBitmap(bitmap, null, dst,null);
 		canvas.drawCircle((float) x, (float) y, 5, paint);
 		canvas.restore();
@@ -70,18 +75,36 @@ public class FloorPlanView extends ImageView{
 		paint = new Paint();
 		paint.setColor(Color.BLUE);
 		bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.floorplan);
-		updateBitmap();
 		detector = new ScaleGestureDetector(getContext(), new ScaleListener());
-	}
-	
-	public void updateBitmap(){
-		mutableBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true);
-		tempCanvas = new Canvas(mutableBitmap);
 	}
 	
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
-		return detector.onTouchEvent(event);
+		switch(event.getAction() & MotionEvent.ACTION_MASK) {
+		case MotionEvent.ACTION_DOWN:
+			mode = DRAG;
+			startX = event.getX();
+			startY = event.getY();
+			break;
+		case MotionEvent.ACTION_MOVE:
+			translateX = event.getX() - startX;
+			translateY = event.getY() - startY;
+			break;
+		case MotionEvent.ACTION_POINTER_DOWN:
+			mode = ZOOM;
+			break;
+		case MotionEvent.ACTION_POINTER_UP:
+			mode = DRAG;
+			break;
+		case MotionEvent.ACTION_UP:
+			mode = NONE;
+			break;
+		}
+		boolean result = detector.onTouchEvent(event);
+		if ((mode == DRAG && scaleFactor != 1f) || mode == ZOOM) {
+			invalidate();
+		}
+		return result;
 	}
 	
 	
@@ -90,8 +113,6 @@ public class FloorPlanView extends ImageView{
 		public boolean onScale(ScaleGestureDetector detector) {
 			scaleFactor *= detector.getScaleFactor();
 			scaleFactor = Math.max(MIN_ZOOM, Math.min(scaleFactor, MAX_ZOOM));
-			updateBitmap();
-			invalidate();
 			return true;
 		}
 	}
