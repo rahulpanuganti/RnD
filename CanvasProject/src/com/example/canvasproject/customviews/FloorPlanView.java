@@ -31,7 +31,7 @@ public class FloorPlanView extends ImageView{
 	private static int DRAG = 1;
 	private static int ZOOM = 2;
 	private int mode = 0;
-	private float startX = 0f,startY = 0f, translateX = 0f, translateY = 0f;
+	private float startX = 0f,startY = 0f, translateX = 0f, translateY = 0f, previousTranslateX = 0f, previousTranslateY = 0f;
 	
 	public FloorPlanView(Context context) {
 		super(context);
@@ -83,8 +83,8 @@ public class FloorPlanView extends ImageView{
 		switch(event.getAction() & MotionEvent.ACTION_MASK) {
 		case MotionEvent.ACTION_DOWN:
 			mode = DRAG;
-			startX = event.getX();
-			startY = event.getY();
+			startX = event.getX() - previousTranslateX;
+			startY = event.getY() - previousTranslateY;
 			break;
 		case MotionEvent.ACTION_MOVE:
 			translateX = event.getX() - startX;
@@ -98,6 +98,8 @@ public class FloorPlanView extends ImageView{
 			break;
 		case MotionEvent.ACTION_UP:
 			mode = NONE;
+			previousTranslateX = translateX;
+			previousTranslateY = translateY;
 			break;
 		}
 		boolean result = detector.onTouchEvent(event);
