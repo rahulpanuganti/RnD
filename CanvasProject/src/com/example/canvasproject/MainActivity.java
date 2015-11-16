@@ -13,8 +13,8 @@ public class MainActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		Intent intent = new Intent("Coordinates");
-		intent.putExtra("X", 200.0);
-		intent.putExtra("Y", 200.0);
+		intent.putExtra("X", 250.0);
+		intent.putExtra("Y", 250.0);
 		sendBroadcast(intent);
 	}
 
