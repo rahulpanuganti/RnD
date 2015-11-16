@@ -11,10 +11,13 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Point;
 import android.graphics.Rect;
 import android.util.AttributeSet;
+import android.view.Display;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
+import android.view.WindowManager;
 import android.widget.ImageView;
 
 public class FloorPlanView extends ImageView{
@@ -31,7 +34,10 @@ public class FloorPlanView extends ImageView{
 	private static int DRAG = 1;
 	private static int ZOOM = 2;
 	private int mode = 0;
-	private float startX = 0f,startY = 0f, translateX = 0f, translateY = 0f, previousTranslateX = 0f, previousTranslateY = 0f;
+	private float startX = 0f,startY = 0f, translateX = 0f, translateY = 0f, 
+			previousTranslateX = 0f, previousTranslateY = 0f, displayWidth, displayHeight;
+	private Display display;
+	private Point dimensions;
 	
 	public FloorPlanView(Context context) {
 		super(context);
@@ -63,15 +69,32 @@ public class FloorPlanView extends ImageView{
 		super.onDraw(canvas);
 		canvas.save();
 		canvas.scale(scaleFactor, scaleFactor);
+		if(translateX > 0) {
+			translateX = 0;
+		}
+		else if((translateX * -1) > (scaleFactor - 1) * displayWidth) {
+			translateX = (1 - scaleFactor) * displayWidth;
+			}
+		if(translateY > 0) {
+			translateY = 0;
+		}
+		else if((translateY * -1) > (scaleFactor - 1) * displayWidth) {
+			translateY = (1 - scaleFactor) * displayWidth;
+			}
 		canvas.translate(translateX/scaleFactor, translateY/scaleFactor);
 		canvas.drawBitmap(bitmap, null, dst,null);
-		canvas.drawCircle((float) x, (float) y, 5, paint);
+		canvas.drawCircle((float) x, (float) y, 5/scaleFactor, paint);
 		canvas.restore();
 	}
 	
 	public void init(Context context) {
 		context.registerReceiver(pointReceiver, new IntentFilter("Coordinates"));
-		dst = new Rect(0, 0, 400, 400);
+		dimensions = new Point();
+		WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+		Display display = wm.getDefaultDisplay();
+		display.getSize(dimensions);
+		displayWidth = dimensions.x - 50;
+		dst = new Rect(0, 0, (int)displayWidth, (int)displayWidth);
 		paint = new Paint();
 		paint.setColor(Color.BLUE);
 		bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.floorplan);
