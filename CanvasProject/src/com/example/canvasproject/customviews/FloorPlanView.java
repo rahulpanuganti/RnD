@@ -35,7 +35,8 @@ public class FloorPlanView extends ImageView{
 	private static int ZOOM = 2;
 	private int mode = 0;
 	private float startX = 0f,startY = 0f, translateX = 0f, translateY = 0f, 
-			previousTranslateX = 0f, previousTranslateY = 0f, displayWidth, displayHeight;
+			previousTranslateX = 0f, previousTranslateY = 0f, displayWidth, displayHeight,
+			lastGestureX, lastGestureY, zoomTranslationX = 0f, zoomTranslationY = 0f;
 	private Display display;
 	private Point dimensions;
 	
@@ -68,7 +69,6 @@ public class FloorPlanView extends ImageView{
 	public void onDraw(Canvas canvas){
 		super.onDraw(canvas);
 		canvas.save();
-		canvas.scale(scaleFactor, scaleFactor);
 		if(translateX > 0) {
 			translateX = 0;
 		}
@@ -82,6 +82,12 @@ public class FloorPlanView extends ImageView{
 			translateY = (1 - scaleFactor) * displayWidth;
 			}
 		canvas.translate(translateX/scaleFactor, translateY/scaleFactor);
+		if(detector.isInProgress()) {
+			canvas.scale(scaleFactor, scaleFactor,detector.getFocusX(),detector.getFocusY());
+		}
+		else {
+			canvas.scale(scaleFactor, scaleFactor,lastGestureX,lastGestureY);
+		}
 		canvas.drawBitmap(bitmap, null, dst,null);
 		canvas.drawCircle((float) x, (float) y, 5/scaleFactor, paint);
 		canvas.restore();
@@ -106,18 +112,26 @@ public class FloorPlanView extends ImageView{
 		switch(event.getAction() & MotionEvent.ACTION_MASK) {
 		case MotionEvent.ACTION_DOWN:
 			mode = DRAG;
-			startX = event.getX() - previousTranslateX;
-			startY = event.getY() - previousTranslateY;
+			startX = event.getX() - translateX;
+			startY = event.getY() - translateY;
 			break;
 		case MotionEvent.ACTION_MOVE:
-			translateX = event.getX() - startX;
-			translateY = event.getY() - startY;
+			if (true) {
+				if (detector.isInProgress()) {
+					lastGestureX = detector.getFocusX();
+					lastGestureY = detector.getFocusY();
+				}
+				translateX = event.getX() - startX;
+				translateY = event.getY() - startY;
+			}
 			break;
 		case MotionEvent.ACTION_POINTER_DOWN:
 			mode = ZOOM;
 			break;
 		case MotionEvent.ACTION_POINTER_UP:
 			mode = DRAG;
+			startX = event.getX() - translateX;
+			startY = event.getX() - translateY;
 			break;
 		case MotionEvent.ACTION_UP:
 			mode = NONE;
@@ -136,8 +150,14 @@ public class FloorPlanView extends ImageView{
 	private class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
 		@Override
 		public boolean onScale(ScaleGestureDetector detector) {
+			float oldScaleFactor = scaleFactor;
 			scaleFactor *= detector.getScaleFactor();
+			float scaleDifference = scaleFactor/oldScaleFactor;
 			scaleFactor = Math.max(MIN_ZOOM, Math.min(scaleFactor, MAX_ZOOM));
+			zoomTranslationX = ((1 - scaleDifference) * detector.getFocusX());
+			zoomTranslationY = ((1 - scaleDifference) * detector.getFocusY());
+			translateX -= zoomTranslationX;
+			translateY -= zoomTranslationY;
 			return true;
 		}
 	}
