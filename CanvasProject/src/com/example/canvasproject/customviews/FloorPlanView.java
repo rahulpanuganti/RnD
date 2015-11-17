@@ -73,13 +73,16 @@ public class FloorPlanView extends ImageView{
 			translateX = zoomTranslationX;
 		}
 		else if(((translateX - zoomTranslationX) * -1) > (scaleFactor - 1) * displayWidth) {
-			translateX = (1 - scaleFactor) * displayWidth;
+			translateX = (1 - scaleFactor) * displayWidth +zoomTranslationX;
 			}
+		else {
+			
+		}
 		if(translateY - zoomTranslationY > 0) {
 			translateY = zoomTranslationY;
 		}
 		else if(((translateY - zoomTranslationY) * -1) > (scaleFactor - 1) * displayWidth) {
-			translateY = (1 - scaleFactor) * displayWidth;
+			translateY = (1 - scaleFactor) * displayWidth + zoomTranslationY;
 			}
 		canvas.translate(translateX, translateY);
 		if(detector.isInProgress()) {
@@ -88,10 +91,6 @@ public class FloorPlanView extends ImageView{
 		else {
 			canvas.scale(scaleFactor, scaleFactor, lastGestureX, lastGestureY);
 		}
-		translateX -= zoomTranslationX;
-		translateY -= zoomTranslationY;
-		zoomTranslationX = 0f;
-		zoomTranslationY = 0f;
 		canvas.drawBitmap(bitmap, null, dst,null);
 		canvas.drawCircle((float) x, (float) y, 5/scaleFactor, paint);
 		canvas.restore();
@@ -120,10 +119,10 @@ public class FloorPlanView extends ImageView{
 			startY = event.getY() - translateY;
 			break;
 		case MotionEvent.ACTION_MOVE:
-			/*if (detector.isInProgress()) {
+			if (detector.isInProgress()) {
 					lastGestureX = detector.getFocusX();
 					lastGestureY = detector.getFocusY();
-			}*/
+			}
 			if (mode == DRAG) {
 				translateX = event.getX() - startX;
 				translateY = event.getY() - startY;
@@ -154,10 +153,10 @@ public class FloorPlanView extends ImageView{
 			scaleFactor *= detector.getScaleFactor();
 			float scaleDifference = scaleFactor/oldScaleFactor;
 			scaleFactor = Math.max(MIN_ZOOM, Math.min(scaleFactor, MAX_ZOOM));
-			zoomTranslationX += ((1 - scaleDifference) * detector.getFocusX())/scaleFactor;
-			zoomTranslationY += ((1 - scaleDifference) * detector.getFocusY())/scaleFactor;
-			lastGestureX = detector.getFocusX();
-			lastGestureY = detector.getFocusY();
+			zoomTranslationX = ((1 - scaleDifference) * detector.getFocusX())/scaleFactor;
+			zoomTranslationY = ((1 - scaleDifference) * detector.getFocusY())/scaleFactor;
+			translateX -= zoomTranslationX;
+			translateY -= zoomTranslationY;
 			return true;
 		}
 	}
